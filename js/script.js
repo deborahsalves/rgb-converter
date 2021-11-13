@@ -1,109 +1,103 @@
-const form = document.getElementById('userHexInput');
-console.log(`form: ${form}`);
-const userInput = document.getElementById('hexInput');
-console.log(`userInput: ${userInput}`);
-const hexSubmitBtn = document.getElementById('hexSubmit');
-console.log(`hexSubmitBtn: ${hexSubmitBtn}`);
-const outputDiv = document.getElementById('outputDiv');
+// special thanks to @evelew for the mentorship and help with refactoring
 
-// slices string input into R, G, B and transparency 2-chr strings
-const sliceInput = (str) => {
-    let red = str.slice(0,2);
-    let green = str.slice(2,4);
-    let blue = str.slice(4,6);
-    // if user inputs transparency code
-    if (str.length > 6) {
-        let transparency = str.slice(6,8);
-        return numAsArray = [red, green, blue, transparency]
-    } else {
-        return numAsArray = [red, green, blue]
+//define constants
+const HEX_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
+const LETTERS_VALUES = [10, 11, 12, 13, 14, 15];
+const POWER_OF_16 = 16;
+const MAX_OPACITY = 255;
+
+const submitBtn = document.getElementById('hexSubmit');
+
+if(!submitBtn){
+    console.log(`Submit button was not found.`)
+}
+
+const formValidation = (hexInputString) => {
+    if (hexInputString.length < 6) {
+        return alert(`Your input must be 6-8 characters long. \nYou inputed ${hexInputString.length} characters.`);
     }
 }
 
-// takes 16 base (hex) code and returns 10 base (rgb) code 
-const colorLetterIntoNumbers = (str, index) => {
-    str = str.toUpperCase();
-    const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
-    // checks if code is number or letter
-    if (letters.includes(str[index])) {
-        let letterIndex = letters.indexOf(str[index]);
-        let tens = 10;
-        // if the number/letter is in the tens, adjust *10 and letter index
-        if (index === 0) { 
-            index = 16 
-            tens = 160
-        } 
-        return tens + (letterIndex * index);
-    } else {
-        let eachStr = str[index];
-        if (index === 0) { index = 16 }
-        return eachStr * index;
+const getUserInput = () => {
+    const hexInput = document.getElementById('hexInput');
+    const userInput = hexInput.value;
+    return userInput;
+}
+
+const slice = (inputString) => {
+    const red = inputString.slice(0,2);
+    const green = inputString.slice(2,4);
+    const blue = inputString.slice(4,6);
+    const transparency = inputString.slice(6,8);
+    return [red, green, blue, transparency];
+}
+
+const isNumber = (colorChar) => {
+    let colorNumber = colorChar;
+    if (HEX_LETTERS.includes(colorNumber)) {
+        const letterIndex = HEX_LETTERS.indexOf(colorNumber);
+        colorNumber = LETTERS_VALUES[letterIndex];
     }
+    return Number(colorNumber);
 }
 
-// converts transparency to percent
-const transparencyToPercent = (num) => {
-    let trans = (num * (100/25500)).toFixed(2)
-    return Number(trans);
+const isNotEmpty = (eachColorString) => {
+    return eachColorString.length !== 0 ? true : false;
 }
 
-// prints codes as string for user to copy/paste
-const printRGB = (arr) => {
-    let returnStr = arr.map((each) => {
-        each = String(each)
-        return each;
-    })
-    return returnStr;
+const eachColorToRgb = (eachColorString) => {
+    let tensDigit = isNumber(eachColorString[0])
+    tensDigit *= POWER_OF_16; 
+    const unitDigit = isNumber(eachColorString[1])
+    return tensDigit + unitDigit;
 }
 
-// calls functions when event is fired
-const hexToRGB = (str) => {
-    let hexArray = sliceInput(str);
-    let rbgArray = hexArray.map((each) => {
-        let firstIndex = colorLetterIntoNumbers(each, 0);
-        let secondIndex = colorLetterIntoNumbers(each, 1);
-        return firstIndex+secondIndex;
-    })
-    // runs if user inputed transparency code
-    if (rbgArray.length === 4) {
-        let strToNum = Number(rbgArray[3])
-        rbgArray[3] = transparencyToPercent(strToNum);
-    } else {
-        rbgArray[3] = '1.00';
-    }
-    let output = printRGB(rbgArray);
-    return output;
+const transparencyToPercent = (transparencyString) => {
+    const transparency = (transparencyString / MAX_OPACITY).toFixed(2)
+    return Number(transparency);
 }
 
-// console.log(sliceInput('222222ff'))
-// console.log(colorLetterIntoNumbers('AA', 0))
-//console.log(printRGB(hexToRGB('cd9922cc')))
-
-if(!hexSubmitBtn){
-    console.log('não achou')
+const hexToRGB = (inputString) => {
+    const inputAsArray = slice(inputString.toUpperCase());
+    const rbgOutputAsArray = inputAsArray.map((eachColorString) => {
+        if (isNotEmpty(eachColorString)) {
+            return eachColorToRgb(eachColorString);
+        } else {
+            return 255;
+        }
+    });
+    rbgOutputAsArray[3] = transparencyToPercent(rbgOutputAsArray[3])
+    return rbgOutputAsArray;
 }
 
-const assembleHTMLOutput = (e) => {
-    // e.preventDefault();
-    console.log('clicked')
+const printRGBstring = (rbgOutputAsArray) => {
+    return rbgOutputAsArray.map((char) => String(char));
+}
 
-    // input
-    const userInputData = userInput.value;
-    const inputedText = document.getElementById('inputedHex');
-    inputedText.textContent = `#${userInputData}`;
+const assembleHTMLOutput = (hexInputString, rbgOutputString) => {
+    // select page elements
+    const outputDiv = document.getElementById('outputDiv');
+    const inputedHex = document.getElementById('inputedHex');
     const inputedData = document.getElementById('inputedData');
-    inputedData.style.backgroundColor = `#${userInputData}`;
-
-    // output
-    const output = hexToRGB(userInputData);
     const outputText = document.getElementById('outputedRGB');
-    outputText.textContent = `rgba(${output})`;
-    const outputedData = document.getElementById('outputedData');
-    outputedData.style.backgroundColor = `#${userInputData}`
+    const outputedData = document.getElementById('outputedData');    
+
+    inputedHex.textContent = `#${hexInputString}`;
+    inputedData.style.backgroundColor = `#${hexInputString}`;
+    outputText.textContent = `rgba(${rbgOutputString})`;
+    outputedData.style.backgroundColor = `rgba(${rbgOutputString})`
 
     outputDiv.style.display = 'block';
 }
 
-hexSubmitBtn.addEventListener('click', assembleHTMLOutput);
+const convertToRBG = () => {
+    const hexInputString = getUserInput();
+    if (hexInputString.length < 6) {
+        return formValidation(hexInputString);
+    }
+    const rbgOutputAsArray = hexToRGB(hexInputString);
+    const rbgOutputString = printRGBstring(rbgOutputAsArray);
+    return assembleHTMLOutput(hexInputString, rbgOutputString);
+}
 
-
+submitBtn.addEventListener('click', convertToRBG);
