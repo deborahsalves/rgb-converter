@@ -1,9 +1,5 @@
 // special thanks to @evelew for the mentorship and help with refactoring
 
-//define constants
-const HEX_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
-const LETTERS_VALUES = [10, 11, 12, 13, 14, 15];
-const POWER_OF_16 = 16;
 const MAX_OPACITY = 255;
 
 const submitBtn = document.getElementById('hexSubmit');
@@ -32,24 +28,12 @@ const slice = (inputString) => {
     return [red, green, blue, transparency];
 }
 
-const isNumber = (colorChar) => {
-    let colorNumber = colorChar;
-    if (HEX_LETTERS.includes(colorNumber)) {
-        const letterIndex = HEX_LETTERS.indexOf(colorNumber);
-        colorNumber = LETTERS_VALUES[letterIndex];
-    }
-    return Number(colorNumber);
-}
-
 const isNotEmpty = (eachColorString) => {
     return eachColorString.length !== 0 ? true : false;
 }
 
 const eachColorToRgb = (eachColorString) => {
-    let tensDigit = isNumber(eachColorString[0])
-    tensDigit *= POWER_OF_16; 
-    const unitDigit = isNumber(eachColorString[1])
-    return tensDigit + unitDigit;
+    return parseInt(eachColorString, 16);
 }
 
 const transparencyToPercent = (transparencyString) => {
