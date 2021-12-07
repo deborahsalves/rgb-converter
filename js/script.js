@@ -1,6 +1,15 @@
 // special thanks to @evelew for the mentorship and help with refactoring
 
+//helper
+
+const showHideLoader = (state) => {
+    const loader = document.getElementsByClassName('loader')[0];
+    loader.style.display = state === 'none' ? 'block' : 'none';
+}
+
+// RGB converter
 const MAX_OPACITY = 255;
+
 
 const submitBtn = document.getElementById('hexSubmit');
 
@@ -8,16 +17,23 @@ if(!submitBtn){
     console.log(`Submit button was not found.`)
 }
 
-const formValidation = (hexInputString) => {
-    if (hexInputString.length < 6) {
-        return alert(`Your input must be 6-8 characters long. \nYou inputed ${hexInputString.length} characters.`);
-    }
-}
-
 const getUserInput = () => {
     const hexInput = document.getElementById('hexInput');
     const userInput = hexInput.value;
     return userInput;
+}
+
+const formValidation = (hexInputString) => {
+    const hexInputArray = hexInputString.toLowerCase().split('');
+    const shorterThanMinLength = hexInputArray.length < 6 ? true : false;
+    const hasInvalidChars = hexInputArray.some(char => char.charCodeAt(0) >102);
+    if (shorterThanMinLength) {
+        return alert(`Your input must be 6-8 characters long. \nYou inputed ${hexInputArray.length} characters.`);
+    }
+    if (hasInvalidChars) {
+        return alert(`Your input can only include letters from A to F.`);
+    }
+    return true;
 }
 
 const slice = (inputString) => {
@@ -42,20 +58,20 @@ const transparencyToPercent = (transparencyString) => {
 }
 
 const hexToRGB = (inputString) => {
-    const inputAsArray = slice(inputString.toUpperCase());
-    const rbgOutputAsArray = inputAsArray.map((eachColorString) => {
+    const inputArray = slice(inputString.toUpperCase());
+    const rbgOutputArray = inputArray.map((eachColorString) => {
         if (isNotEmpty(eachColorString)) {
             return eachColorToRgb(eachColorString);
         } else {
-            return 255;
+            return MAX_OPACITY;
         }
     });
-    rbgOutputAsArray[3] = transparencyToPercent(rbgOutputAsArray[3])
-    return rbgOutputAsArray;
+    rbgOutputArray[3] = transparencyToPercent(rbgOutputArray[3])
+    return rbgOutputArray;
 }
 
-const printRGBstring = (rbgOutputAsArray) => {
-    return rbgOutputAsArray.map((char) => String(char));
+const printRGBstring = (rbgOutputArray) => {
+    return rbgOutputArray.map((char) => String(char));
 }
 
 const assembleHTMLOutput = (hexInputString, rbgOutputString) => {
@@ -72,16 +88,60 @@ const assembleHTMLOutput = (hexInputString, rbgOutputString) => {
     outputedData.style.backgroundColor = `rgba(${rbgOutputString})`
 
     outputDiv.style.display = 'block';
+    showHideLoader('block');
+    return;
 }
 
 const convertToRBG = () => {
+    showHideLoader('none');
     const hexInputString = getUserInput();
-    if (hexInputString.length < 6) {
-        return formValidation(hexInputString);
+    if (!formValidation(hexInputString)){
+        return;
     }
-    const rbgOutputAsArray = hexToRGB(hexInputString);
-    const rbgOutputString = printRGBstring(rbgOutputAsArray);
+    const rbgOutputArray = hexToRGB(hexInputString);
+    const rbgOutputString = printRGBstring(rbgOutputArray);
     return assembleHTMLOutput(hexInputString, rbgOutputString);
 }
 
+
+// Copy RGB output
+const copyBtn = document.getElementById('rgbCopy');
+
+if(!copyBtn){
+    console.log(`Copy button was not found.`)
+}
+
+
+const copyRGBoutput = async () => {
+    const rgbString = document.getElementById('outputedRGB').textContent;
+    try {
+        const copiedText = await navigator.clipboard.writeText(rgbString);
+        alert('RGB code was copied successfully!')
+    } catch(error){
+        console.log(error);
+        alert(`Sorry, there was an error:${error}`)
+    }
+    return;
+}
+
+
+// Set user color as background
+const setBgBtn = document.getElementById('rgbBgSet');
+
+const setBackgroundColor = () => {
+    const rgbString = document.getElementById('outputedRGB').textContent;
+    console.log(rgbString);
+    const body = document.getElementById('app')
+    console.log(`main: ${body.style.backgroundColor}`);
+    const inputDiv = document.getElementsByClassName('inputDiv')[0];
+    body.style.background = rgbString;
+    inputDiv.style.background = '#F2f2f2';
+    inputDiv.style.marginLeft = '-10px';
+    inputDiv.style.paddingLeft = '10px';
+}
+
+
 submitBtn.addEventListener('click', convertToRBG);
+copyBtn.addEventListener('click', copyRGBoutput);
+setBgBtn.addEventListener('click', setBackgroundColor);
+
